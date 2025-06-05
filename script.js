@@ -11,7 +11,7 @@ function saveTasks(tasks) {
 // Función para actualizar el contador de tareas pendientes
 function updateTaskCounter() {
     const tasks = loadTasks();
-    const pendingTasks = tasks.filter(task => !task.completed).length;
+    const pendingTasks = tasks.filter(task => task.status !== 'completada').length;
     document.getElementById('pending-tasks').textContent = pendingTasks;
 }
 
@@ -21,25 +21,48 @@ function renderTasks() {
     const tasks = loadTasks();
     taskList.innerHTML = '';
 
-    tasks.forEach(task => {
+    tasks.forEach((task, index) => {
         const item = document.createElement('div');
-        item.className = 'task-item' + (task.completed ? ' completed' : '');
+        item.className = 'task-item' + (task.status === 'completada' ? ' completed' : '');
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.className = 'task-checkbox';
-        checkbox.checked = task.completed;
+        checkbox.checked = task.status === 'completada';
+        checkbox.dataset.index = index;
 
-        const textSpan = document.createElement('span');
-        textSpan.className = 'task-text';
-        textSpan.textContent = task.text;
+        const info = document.createElement('div');
+        info.className = 'task-info';
+
+        const title = document.createElement('span');
+        title.className = 'task-title';
+        title.textContent = task.title;
+
+        const desc = document.createElement('p');
+        desc.className = 'task-desc';
+        desc.textContent = task.description;
+
+        const status = document.createElement('span');
+        status.className = 'task-status';
+        status.textContent = task.status;
+
+        info.appendChild(title);
+        info.appendChild(desc);
+        info.appendChild(status);
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'edit-btn';
+        editBtn.textContent = '✏️';
+        editBtn.dataset.index = index;
 
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
         deleteBtn.textContent = '🗑️';
+        deleteBtn.dataset.index = index;
 
         item.appendChild(checkbox);
-        item.appendChild(textSpan);
+        item.appendChild(info);
+        item.appendChild(editBtn);
         item.appendChild(deleteBtn);
         taskList.appendChild(item);
     });
@@ -49,9 +72,12 @@ function renderTasks() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const addTaskBtn = document.getElementById('add-task');
-    const taskInput = document.getElementById('task-input');
+    const titleInput = document.getElementById('task-title');
+    const descInput = document.getElementById('task-desc');
+    const statusInput = document.getElementById('task-status');
     const taskList = document.getElementById('task-list');
     const themeToggle = document.getElementById('theme-toggle');
+    let editIndex = null;
 
     function loadTheme() {
         return localStorage.getItem('theme') || 'light';
@@ -72,24 +98,35 @@ document.addEventListener('DOMContentLoaded', () => {
     applyTheme(loadTheme());
 
     function handleAddTask() {
-        const text = taskInput.value.trim();
-        if (text) {
-            const tasks = loadTasks();
-            const exists = tasks.some(task => task.text.toLowerCase() === text.toLowerCase());
-            if (exists) {
-                alert('La tarea ya existe');
-                return;
-            }
-            tasks.push({ text, completed: false });
-            saveTasks(tasks);
-            renderTasks();
-            taskInput.value = '';
+        const title = titleInput.value.trim();
+        const description = descInput.value.trim();
+        const status = statusInput.value;
+
+        if (!title) {
+            return;
         }
+
+        const tasks = loadTasks();
+
+        if (editIndex !== null) {
+            tasks[editIndex] = { title, description, status };
+            editIndex = null;
+            addTaskBtn.textContent = 'Agregar Tarea';
+        } else {
+            tasks.push({ title, description, status });
+        }
+
+        saveTasks(tasks);
+        renderTasks();
+
+        titleInput.value = '';
+        descInput.value = '';
+        statusInput.value = 'pendiente';
     }
 
     addTaskBtn.addEventListener('click', handleAddTask);
 
-    taskInput.addEventListener('keydown', (e) => {
+    titleInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             handleAddTask();
         }
@@ -98,17 +135,23 @@ document.addEventListener('DOMContentLoaded', () => {
     taskList.addEventListener('click', (e) => {
         const tasks = loadTasks();
         if (e.target.classList.contains('task-checkbox')) {
-            const taskItem = e.target.parentElement;
-            const index = Array.from(taskItem.parentElement.children).indexOf(taskItem);
-            tasks[index].completed = e.target.checked;
+            const index = parseInt(e.target.dataset.index, 10);
+            tasks[index].status = e.target.checked ? 'completada' : 'pendiente';
             saveTasks(tasks);
             renderTasks();
         } else if (e.target.classList.contains('delete-btn')) {
-            const taskItem = e.target.parentElement;
-            const index = Array.from(taskItem.parentElement.children).indexOf(taskItem);
+            const index = parseInt(e.target.dataset.index, 10);
             tasks.splice(index, 1);
             saveTasks(tasks);
             renderTasks();
+        } else if (e.target.classList.contains('edit-btn')) {
+            const index = parseInt(e.target.dataset.index, 10);
+            const task = tasks[index];
+            titleInput.value = task.title;
+            descInput.value = task.description;
+            statusInput.value = task.status;
+            editIndex = index;
+            addTaskBtn.textContent = 'Guardar Cambios';
         }
     });
 
