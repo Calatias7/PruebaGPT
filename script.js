@@ -51,11 +51,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const addTaskBtn = document.getElementById('add-task');
     const taskInput = document.getElementById('task-input');
     const taskList = document.getElementById('task-list');
+    const themeToggle = document.getElementById('theme-toggle');
+
+    function loadTheme() {
+        return localStorage.getItem('theme') || 'light';
+    }
+
+    function applyTheme(theme) {
+        document.body.classList.toggle('dark-theme', theme === 'dark');
+        themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+
+    themeToggle.addEventListener('click', () => {
+        const current = loadTheme();
+        const next = current === 'light' ? 'dark' : 'light';
+        localStorage.setItem('theme', next);
+        applyTheme(next);
+    });
+
+    applyTheme(loadTheme());
 
     function handleAddTask() {
         const text = taskInput.value.trim();
         if (text) {
             const tasks = loadTasks();
+            const exists = tasks.some(task => task.text.toLowerCase() === text.toLowerCase());
+            if (exists) {
+                alert('La tarea ya existe');
+                return;
+            }
             tasks.push({ text, completed: false });
             saveTasks(tasks);
             renderTasks();
