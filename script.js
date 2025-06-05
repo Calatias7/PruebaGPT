@@ -1,7 +1,6 @@
 // Función para cargar tareas desde localStorage
 function loadTasks() {
-    const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-    return tasks;
+    return JSON.parse(localStorage.getItem('tasks')) || [];
 }
 
 // Función para guardar tareas en localStorage
@@ -16,54 +15,79 @@ function updateTaskCounter() {
     document.getElementById('pending-tasks').textContent = pendingTasks;
 }
 
-// Función para renderizar la lista de tareas
+// Función para renderizar la lista de tareas sin usar innerHTML
 function renderTasks() {
     const taskList = document.getElementById('task-list');
     const tasks = loadTasks();
-    
-    taskList.innerHTML = tasks.map(task => `
-        <div class="task-item ${task.completed ? 'completed' : ''}">
-            <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
-            <span class="task-text">${task.text}</span>
-            <button class="delete-btn">🗑️</button>
-        </div>
-    `).join('');
-    
+    taskList.innerHTML = '';
+
+    tasks.forEach(task => {
+        const item = document.createElement('div');
+        item.className = 'task-item' + (task.completed ? ' completed' : '');
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'task-checkbox';
+        checkbox.checked = task.completed;
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'task-text';
+        textSpan.textContent = task.text;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = '🗑️';
+
+        item.appendChild(checkbox);
+        item.appendChild(textSpan);
+        item.appendChild(deleteBtn);
+        taskList.appendChild(item);
+    });
+
     updateTaskCounter();
 }
 
-// Event listener para agregar tarea
-document.getElementById('add-task').addEventListener('click', () => {
-    const input = document.getElementById('task-input');
-    const text = input.value.trim();
-    
-    if (text) {
+document.addEventListener('DOMContentLoaded', () => {
+    const addTaskBtn = document.getElementById('add-task');
+    const taskInput = document.getElementById('task-input');
+    const taskList = document.getElementById('task-list');
+
+    function handleAddTask() {
+        const text = taskInput.value.trim();
+        if (text) {
+            const tasks = loadTasks();
+            tasks.push({ text, completed: false });
+            saveTasks(tasks);
+            renderTasks();
+            taskInput.value = '';
+        }
+    }
+
+    addTaskBtn.addEventListener('click', handleAddTask);
+
+    taskInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            handleAddTask();
+        }
+    });
+
+    taskList.addEventListener('click', (e) => {
         const tasks = loadTasks();
-        tasks.push({ text, completed: false });
-        saveTasks(tasks);
-        renderTasks();
-        input.value = '';
-    }
-});
+        if (e.target.classList.contains('task-checkbox')) {
+            const taskItem = e.target.parentElement;
+            const index = Array.from(taskItem.parentElement.children).indexOf(taskItem);
+            tasks[index].completed = e.target.checked;
+            saveTasks(tasks);
+            renderTasks();
+        } else if (e.target.classList.contains('delete-btn')) {
+            const taskItem = e.target.parentElement;
+            const index = Array.from(taskItem.parentElement.children).indexOf(taskItem);
+            tasks.splice(index, 1);
+            saveTasks(tasks);
+            renderTasks();
+        }
+    });
 
-// Event listener para el contenedor de tareas
-document.getElementById('task-list').addEventListener('click', (e) => {
-    const tasks = loadTasks();
-    
-    if (e.target.classList.contains('task-checkbox')) {
-        const taskItem = e.target.parentElement;
-        const index = Array.from(taskItem.parentElement.children).indexOf(taskItem);
-        tasks[index].completed = e.target.checked;
-        saveTasks(tasks);
-        renderTasks();
-    } else if (e.target.classList.contains('delete-btn')) {
-        const taskItem = e.target.parentElement;
-        const index = Array.from(taskItem.parentElement.children).indexOf(taskItem);
-        tasks.splice(index, 1);
-        saveTasks(tasks);
-        renderTasks();
-    }
+    // Inicializar la aplicación
+    renderTasks();
 });
-
-// Inicializar la aplicación
-renderTasks();
