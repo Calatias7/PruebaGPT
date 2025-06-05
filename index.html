@@ -16,8 +16,16 @@
             <p>Tareas pendientes: <span id="pending-tasks">0</span></p>
         </div>
         <div class="task-form">
-            <label for="task-input">Nueva tarea</label>
-            <input type="text" id="task-input" placeholder="Escribe tu tarea..." autocomplete="off">
+            <label for="task-title">Título</label>
+            <input type="text" id="task-title" placeholder="Título de la tarea" autocomplete="off">
+            <label for="task-desc">Descripción</label>
+            <textarea id="task-desc" placeholder="Descripción de la tarea" rows="3"></textarea>
+            <label for="task-status">Estado</label>
+            <select id="task-status">
+                <option value="pendiente">Pendiente</option>
+                <option value="en progreso">En progreso</option>
+                <option value="completada">Completada</option>
+            </select>
             <button id="add-task">Agregar Tarea</button>
         </div>
         <div class="task-list" id="task-list">
